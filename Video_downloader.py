@@ -41,6 +41,7 @@ def interfaz():
     
     raiz = Tk()
     raiz.title("Youtube Downloader")
+    raiz.iconbitmap("youtube.ico")
     raiz.geometry("560x250")
     raiz.config(bg="white")
     raiz.resizable(False,False)
