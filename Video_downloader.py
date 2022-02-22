@@ -8,24 +8,34 @@ import os
 save_path = os.getcwd()
 
 
-def descargar_video(link,nombre_archivo,calidad):
+def descargar_video(link,nombre_archivo,calidad,extension):
     #descarga el video
     #obtiene el titulo del video
-    EXTENSION = ".mp4"
+
     EXTENSION_SIN_PUNTO = "mp4"
     nombre_archivo_salida = nombre_archivo.get()
 
-    if not archivo_existe(nombre_archivo_salida,EXTENSION):
+    if not archivo_existe(nombre_archivo_salida,extension):
     
         try:
             #obtiene el link y crea un objeto del video
             yt = pytube.YouTube(link.get())
-            #filtra por calidad, extension y por si el audio y el video estan juntos (eso significa progressive)
-            video = yt.streams.filter(res=calidad.get(),file_extension=EXTENSION_SIN_PUNTO,progressive=True)
+
+            if extension == ".mp4":
+                #filtra por calidad, extension y por si el audio y el video estan juntos (eso significa progressive)
+                video = yt.streams.filter(res=calidad.get(),file_extension=EXTENSION_SIN_PUNTO,progressive=True)
+            else:
+                audio = yt.streams.filter(only_audio=True)
+
             
             #si el titulo de video existe lo descarga con la ruta, el titulo y la extension definida
             if nombre_archivo_salida:
-                video.first().download(output_path=save_path,filename=(nombre_archivo_salida + EXTENSION))
+                #comprueba si la extension es mp4 u mp3
+                if extension == ".mp4":
+                    video.first().download(output_path=save_path,filename=(nombre_archivo_salida + extension))
+                else:
+                    audio.first().download(output_path=save_path,filename=(nombre_archivo_salida + extension))
+
                 
             else:
                 mensaje_al_usuario("No ha ingresado ningun titulo para el video!")
@@ -39,7 +49,7 @@ def descargar_video(link,nombre_archivo,calidad):
             mensaje_al_usuario("El video no esta disponible en esa calidad.\nPor favor, elija otra.")
         
         #comprueba que el archivo exista
-        if archivo_existe(nombre_archivo_salida,EXTENSION):
+        if archivo_existe(nombre_archivo_salida,extension):
             mensaje_al_usuario("El archivo se descargo exitosamente!")
         else:
             mensaje_al_usuario("Algo fallo :(")
@@ -47,44 +57,6 @@ def descargar_video(link,nombre_archivo,calidad):
         mensaje_al_usuario("Ya existe un archivo con ese nombre.")  
 
 
-def descargar_audio(link,nombre_archivo):
-    #descarga el video
-    #obtiene el titulo del video
-    EXTENSION = ".mp3"
-    nombre_archivo_salida = nombre_archivo.get()
-
-    if not archivo_existe(nombre_archivo_salida,EXTENSION):
-    
-        try:
-            #obtiene el link y crea un objeto del video
-            yt = pytube.YouTube(link.get())
-            #filtra por calidad, extension y por si el audio y el video estan juntos (eso significa progressive)
-            audio = yt.streams.filter(only_audio=True)
-            
-            #si el titulo de video existe lo descarga con la ruta, el titulo y la extension definida
-            if nombre_archivo_salida:
-                audio.first().download(output_path=save_path,filename=(nombre_archivo_salida + EXTENSION))
-                
-            else:
-                mensaje_al_usuario("No ha ingresado ningun titulo para el video!")
-
-        except RegexMatchError:
-            mensaje_al_usuario("La url es incorrecta!")
-        except (VideoUnavailable, VideoPrivate , VideoRegionBlocked):
-            mensaje_al_usuario("Video no disponible :(")
-        except AttributeError:
-            #este error se da cuando el objeto despues de ser filtrado no contiene la calidad elejida
-            mensaje_al_usuario("El video no esta disponible en esa calidad.\nPor favor, elija otra.")
-        
-        #comprueba que el archivo exista
-        if archivo_existe(nombre_archivo_salida,EXTENSION):
-            mensaje_al_usuario("El archivo se descargo exitosamente!")
-        else:
-            mensaje_al_usuario("Algo fallo :(")
-    else:
-        mensaje_al_usuario("Ya existe un archivo con ese nombre.")  
-    
-    
 def interfaz():
     
     raiz = Tk()
@@ -139,11 +111,11 @@ def interfaz():
     boton_elegir_ruta.pack()
 
     #boton que llama a la funcion que descarga el video
-    boton_descargar_video = Button(raiz, text="¡Descargar Video!", command= lambda:descargar_video(entry_url,entry_nombre_del_archivo,variable_calidad))
+    boton_descargar_video = Button(raiz, text="¡Descargar Video!", command= lambda:descargar_video(entry_url,entry_nombre_del_archivo,variable_calidad,".mp4"))
     boton_descargar_video.config(width=22, font=("Baskerville Old Face", 14), bg="#282828",fg="grey")
     boton_descargar_video.pack()
 
-    boton_descargar_audio = Button(raiz, text="¡Descargar Audio!", command= lambda:descargar_audio(entry_url,entry_nombre_del_archivo))
+    boton_descargar_audio = Button(raiz, text="¡Descargar Audio!", command= lambda:descargar_video(entry_url,entry_nombre_del_archivo,variable_calidad, ".mp3"))
     boton_descargar_audio.config(width=22, font=("Baskerville Old Face", 14), bg="#282828",fg="grey")
     boton_descargar_audio.pack()
 
