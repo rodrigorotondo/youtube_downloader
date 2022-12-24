@@ -4,19 +4,19 @@ import customtkinter
 import os
 import pytube
 from pytube.exceptions import *
-import time
+from moviepy.editor import*
 
 
 save_path = os.getcwd()
-
+EXTENSION_SIN_PUNTO = "mp4"
+error = False
 
 def descargar_video(link,nombre_archivo,calidad,extension):
     #descarga el video
     #obtiene el titulo del video
 
-    error = False
+    global error
 
-    EXTENSION_SIN_PUNTO = "mp4"
     nombre_archivo_salida = nombre_archivo.get()
 
     if not archivo_existe(nombre_archivo_salida,extension):
@@ -52,14 +52,48 @@ def descargar_video(link,nombre_archivo,calidad,extension):
             error = True
         except AttributeError:
             #este error se da cuando el objeto despues de ser filtrado no contiene la calidad elejida
-            mensaje_al_usuario("El video no esta disponible en esa calidad.\nPor favor, elija otra.")
-            error = True
+            descargar_video_calidad_sin_audio(yt,calidad.get(),nombre_archivo_salida)
             
         if(not error):
             mensaje_al_usuario("El archivo se descargo exitosamente!")
         
     else:
         mensaje_al_usuario("Ya existe un archivo con ese nombre.")  
+
+def descargar_video_calidad_sin_audio(yt, calidad, nombre_archivo_salida):
+    global error
+    nombre_video = "temp_video.mp4"
+    nombre_audio = "temp_audio.mp3"
+    try:
+        video = yt.streams.filter(res=calidad,file_extension=EXTENSION_SIN_PUNTO)
+        audio = yt.streams.filter(only_audio=True)
+
+        video.first().download(output_path=save_path,filename=(nombre_video))
+        audio.first().download(output_path=save_path,filename=(nombre_audio))
+        fusionar_audio_video(save_path + "/" + nombre_video, save_path + "/" + nombre_audio ,nombre_archivo_salida)
+    
+    except RegexMatchError:
+        mensaje_al_usuario("La url es incorrecta!")
+        error = True
+    except (VideoUnavailable, VideoPrivate , VideoRegionBlocked):
+        mensaje_al_usuario("Video no disponible :(")
+        error = True
+    except AttributeError:
+        #este error se da cuando el objeto despues de ser filtrado no contiene la calidad elejida
+        error = True
+        mensaje_al_usuario("La calidad elegida no esta disponible")
+
+def fusionar_audio_video(path_video,path_audio,nombre_archivo_salida):
+    video = VideoFileClip(path_video)
+    audio = AudioFileClip(path_audio)
+    video = video.set_audio(audio)
+
+    video.write_videofile(save_path + "/" + nombre_archivo_salida + ".mp4")
+
+    os.remove(path_video)
+    os.remove(path_audio)
+    
+
 
 
 def interfaz():
